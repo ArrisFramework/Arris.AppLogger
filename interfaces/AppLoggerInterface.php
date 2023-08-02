@@ -1,6 +1,6 @@
 <?php
 
-namespace Arris;
+namespace Arris\AppLogger;
 
 use Monolog\Logger;
 

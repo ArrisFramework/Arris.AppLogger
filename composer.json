@@ -20,7 +20,7 @@
         }
     },
     "suggest": {
-    "karelwintersky/arris": "Arris µFramework: AppRouter class",
-    "karelwintersky/arris.helpers": "Arris µFramework: helpers"
-}
+        "karelwintersky/arris": "Arris µFramework: AppRouter class",
+        "karelwintersky/arris.helpers": "Arris µFramework: helpers"
+    }
 }

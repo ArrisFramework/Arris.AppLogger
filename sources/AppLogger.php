@@ -6,9 +6,11 @@
  * Class AppLogger
  * Namespace: Arris
  *
- * Library: https://github.com/KarelWintersky/Arris
+ * Github: https://github.com/ArrisFramework/Arris.AppLogger
+ * Packagist: https://packagist.org/packages/karelwintersky/arris.logger
  *
  * Date: 31.10.2019 14:00:00
+ * Date: 07.08.2023 19:00:00
  *
  */
 
@@ -22,7 +24,8 @@ use Psr\Log\NullLogger;
 
 /**
  * Class AppLogger
- * @package Arris\Arris
+ *
+ * @package Arris.AppLogger
  */
 class AppLogger implements AppLoggerInterface, AppLoggerConstants
 {
@@ -202,18 +205,13 @@ class AppLogger implements AppLoggerInterface, AppLoggerConstants
 
     public static function scope($scope = null):Logger
     {
-        try {
-            $internal_key = self::getScopeKey( $scope );
+        $internal_key = self::getScopeKey( $scope );
 
-            if (!self::checkInstance($internal_key) and self::$_global_config['deferred_scope_creation']) {
-                self::addDeferredScope($scope);
-            }
-
-            return self::$_instances[ $internal_key ];
-
-        } catch (Exception $e) {
-            die(__METHOD__ . ' died at line ' .$e->getLine() . ' With exception ' . $e->getMessage() . ' code = ' . $e->getCode() );
+        if (!self::checkInstance($internal_key) and self::$_global_config['deferred_scope_creation']) {
+            self::addDeferredScope($scope);
         }
+
+        return self::$_instances[ $internal_key ];
     }
 
     /**
@@ -283,7 +281,7 @@ class AppLogger implements AppLoggerInterface, AppLoggerConstants
      */
     private static function checkInstance($key):bool
     {
-        return ( array_key_exists($key, self::$_instances) && self::$_instances[$key] !== NULL );
+        return ( array_key_exists($key, self::$_instances) && self::$_instances[$key] !== null );
     }
 
     /**

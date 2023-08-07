@@ -12,7 +12,7 @@
  *
  */
 
-namespace Arris\AppLogger;
+namespace Arris;
 
 use Exception;
 use \Monolog\Logger;

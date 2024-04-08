@@ -195,6 +195,8 @@ class AppLogger implements AppLoggerInterface
 
     public static function addScope($scope = null, array $scope_levels = [], bool $scope_logging_enabled = true)
     {
+        $is_deferred_scope = false;
+
         if (empty($scope_levels)) {
             $scope_levels = self::DEFAULT_SCOPE_OPTIONS;
             $is_deferred_scope = true;

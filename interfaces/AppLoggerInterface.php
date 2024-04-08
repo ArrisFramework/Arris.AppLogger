@@ -25,7 +25,7 @@ interface AppLoggerInterface
      * - deferred_scope_separate_files - [TRUE] - использовать ли разные файлы для deferred-скоупов (на основе имени скоупа)
      *
      */
-    public static function init($application, $instance, $options = []);
+    public static function init($application, $instance, array $options = []);
 
     /**
      * Добавляет скоуп
@@ -46,7 +46,7 @@ interface AppLoggerInterface
      * @param bool $scope_logging_enabled - разрешен ли скоуп вообще для логгирования?
      * @return mixed
      */
-    public static function addScope($scope = null, $scope_levels = [], $scope_logging_enabled = true);
+    public static function addScope($scope = null, array $scope_levels = [], bool $scope_logging_enabled = true);
 
     /**
      * Получает скоуп

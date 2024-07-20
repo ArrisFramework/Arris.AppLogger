@@ -16,11 +16,8 @@
 
 namespace Arris;
 
-use Exception;
 use \Monolog\Logger;
 use \Monolog\Handler\StreamHandler;
-use \Monolog\Handler\NullHandler;
-use Psr\Log\NullLogger;
 
 /**
  * Class AppLogger
@@ -29,8 +26,6 @@ use Psr\Log\NullLogger;
  */
 class AppLogger implements AppLoggerInterface
 {
-    const VERSION = '1.1.0';
-
     /**
      * Monolog API version
      *
@@ -39,7 +34,7 @@ class AppLogger implements AppLoggerInterface
      *
      * @var int
      */
-    const API = 1;
+    const API = 2;
 
     const SCOPE_DELIMITER = '.';
 
@@ -143,7 +138,7 @@ class AppLogger implements AppLoggerInterface
     /**
      * @var string
      */
-    private static $instance;
+    private static string $instance;
 
     /**
      * @var array

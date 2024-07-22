@@ -2,7 +2,7 @@
 
 namespace Arris;
 
-use Monolog\Logger;
+use Arris\AppLogger\Monolog\Logger;
 
 interface AppLoggerInterface
 {

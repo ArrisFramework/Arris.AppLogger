@@ -113,7 +113,7 @@ AppLogger::addScope('console', [
   AppLogger::addScope('console', [
         [ 'php://stdout', Logger::INFO, [ 'handler' => static function()
           {
-              $formatter = new LineFormatter("[%datetime%]: %message%\n", "Y-m-d H:i:s", false, true);
+              $formatter = new \Arris\Formatter\LineFormatterColored("[%datetime%]: %message%\n", "Y-m-d H:i:s", false, true);
               $handler = new StreamHandler('php://stdout', Logger::INFO);
               $handler->setFormatter($formatter);
               return $handler;
@@ -121,7 +121,7 @@ AppLogger::addScope('console', [
     ], $options['verbose']);
 ```
 
-Добавляет собственный хэндлер логгирования - замыкание.
+Добавляет собственный хэндлер логгирования - и кастомный форматтер. 
 
 
 https://stackoverflow.com/questions/70875746/laravel-monolog-lineformatter-datetime-pattern

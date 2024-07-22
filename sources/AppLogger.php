@@ -16,8 +16,8 @@
 
 namespace Arris;
 
-use \Monolog\Logger;
-use \Monolog\Handler\StreamHandler;
+use Arris\AppLogger\Monolog\Handler\StreamHandler;
+use Arris\AppLogger\Monolog\Logger;
 
 /**
  * Class AppLogger
@@ -233,14 +233,14 @@ class AppLogger implements AppLoggerInterface
 
             // NullHandler если логгер так или иначе отключен
             if ($level_options['enable'] === false) {
-                $level_options['handler'] = \Monolog\Handler\NullHandler::class;
+                $level_options['handler'] = \Arris\AppLogger\Monolog\Handler\NullHandler::class;
             }
 
             if ( $level_options['enable'] == false || $scope_logging_enabled == false )
             {
                 // NULL Handler
                 $level_options['enable'] = false;
-                $logger->pushHandler( new \Monolog\Handler\NullHandler($loglevel) );
+                $logger->pushHandler( new \Arris\AppLogger\Monolog\Handler\NullHandler($loglevel) );
             }
             elseif ( \is_callable($level_options['handler']) )
             {
@@ -253,18 +253,18 @@ class AppLogger implements AppLoggerInterface
                 // Default stream Handler
                 $logger->pushHandler( new StreamHandler($filename, $loglevel, $level_options['bubbling']) );
             }
-            elseif ( \in_array('Monolog\Handler\HandlerInterface', class_implements($level_options['handler'])) )
+            elseif ( \in_array('AppLogger\Monolog\Handler\HandlerInterface', class_implements($level_options['handler'])) )
             {
                 // via HandlerInterface (не тестировалось нормально)
                 /**
-                 * @param \Monolog\Handler\HandlerInterface $level_options[]
+                 * @param \Arris\AppLogger\Monolog\Handler\HandlerInterface $level_options[]
                  */
-                $logger->pushHandler( /** @param \Monolog\Handler\HandlerInterface */ $level_options['handler'] );
+                $logger->pushHandler( /** @param \Arris\AppLogger\Monolog\Handler\HandlerInterface */ $level_options['handler'] );
             }
             else
             {
                 // NULL Handler
-                $logger->pushHandler( new \Monolog\Handler\NullHandler($loglevel) );
+                $logger->pushHandler( new \Arris\AppLogger\Monolog\Handler\NullHandler($loglevel) );
             }
 
             self::$_configs[ $internal_key ][ $loglevel ] = $level_options;
@@ -275,7 +275,7 @@ class AppLogger implements AppLoggerInterface
 
     public static function addNullLogger()
     {
-        return (new Logger('null'))->pushHandler(new \Monolog\Handler\NullHandler());
+        return (new Logger('null'))->pushHandler(new \Arris\AppLogger\Monolog\Handler\NullHandler());
     }
 
     public static function scope($scope = null):Logger

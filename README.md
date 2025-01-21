@@ -61,7 +61,7 @@ AppLogger::scope('mysql')->emergency('MYSQL EMERGENCY');
 ```
 Monolog проспамит этим сообщением по всем объявленным уровням.
 
-# Usage
+# Scope
 
 Вызов `AppLogger::scope($scope_name)` возвращает инстанс `\Monolog\Logger`, к которому можно применить штатные методы логгирования:
 
@@ -90,7 +90,7 @@ AppLogger::scope('usage')->emergency('EMERGENCY USAGE');
 
 *NB:* Если при инициализации обычного скоупа методом `addScope()` передан пустой массив опций логгеров - будет применен механизм инициализации deferred-скоупа.
 
-# Hints 
+# Hints
 
 ## Один файл для нескольких уровней логгирования
 
@@ -108,15 +108,16 @@ AppLogger::scope('log.selectel')->error('Error');
 AppLogger::scope('log.selectel')->notice('Notice');
 ```
 
-# Custom handler
+# Custom handler - хэндлер, отличный от стандартного StreamHandler
 
+Дефолтное определение хэндлера, выводящего данные в stdout, таково:
 ```php
 AppLogger::addScope('console', [
         [ 'php://stdout', Logger::INFO, [ 'handler' => StreamHandler::class ]]
     ], $options['verbose']);
 ```
-Добавляет стандартный StreamHandler (в stdout). При этом он используется только если `$options['verbose'] === true`.
 
+Добавляем кастомный форматтер и хэндлер логгирования:
 ```php
   AppLogger::addScope('console', [
         [ 'php://stdout', Logger::INFO, [ 'handler' => static function()
@@ -129,9 +130,7 @@ AppLogger::addScope('console', [
     ], $options['verbose']);
 ```
 
-Добавляет собственный хэндлер логгирования - и кастомный форматтер. 
-
-https://stackoverflow.com/questions/70875746/laravel-monolog-lineformatter-datetime-pattern
+Смотри: https://stackoverflow.com/questions/70875746/laravel-monolog-lineformatter-datetime-pattern
 
 # addScopeLevel()
 
@@ -144,41 +143,7 @@ AppLogger::addScopeLevel('xxx', 'info.log', Logger::INFO); // Handler не ук�
 AppLogger::scope('xxx')->info('Message XXX');
 ```
 
-## Передача хэндлера строкой:
-
-```php
-AppLogger::addScopeLevel('syslog', 'syslog', Logger::INFO, handler: SyslogHandler::class); 
-```
-Это возможно, но не рекомендуется. Причина? Конструктор примет значения по-умолчанию, в том числе `$bubble = true`, что вызывает странные
-эффекты. Например:
-
-```php
-AppLogger::addScopeLevel('syslog', 'syslog', Logger::INFO, handler: SyslogHandler::class);
-AppLogger::scope('syslog')->debug('Debug message from AppLogger');
-AppLogger::scope('syslog')->info('Info message from AppLogger');
-```
-Выдаст 2 записи для Debug и 2 для Info. Причина - "bubbling". Это можно исправить, но только в версии для PHP8, 
-указав через именованный параметр значение `false`. 
-
-Для совместимости с PHP7.4 рекомендуется:
-
 ## Передача хэндлера коллбэком
-
-```php
-AppLogger::addScopeLevel('syslog', 'syslog', Logger::DEBUG, true, false, function (){
-    return new SyslogHandler(AppLogger::$application, LOG_USER, Logger::DEBUG, false);
-});
-
-AppLogger::addScopeLevel('syslog', 'syslog', Logger::INFO, true, false, function (){
-    return new SyslogHandler(AppLogger::$application, LOG_USER, Logger::INFO, false);
-});
-
-AppLogger::scope('syslog')->debug('Debug message from AppLogger');
-AppLogger::scope('syslog')->info('Info message from AppLogger');
-```
-Так мы задаем кастомный хэндлер через коллбэк, указывая для него особые параметры. 
-
-Или, для PHP8, короче:
 
 ```php
 AppLogger::addScopeLevel('syslog', 'syslog', Logger::DEBUG, handler: function (){
@@ -188,7 +153,23 @@ AppLogger::addScopeLevel('syslog', 'syslog', Logger::DEBUG, handler: function ()
 AppLogger::addScopeLevel('syslog', 'syslog', Logger::INFO, handler: function (){
     return new SyslogHandler(AppLogger::$application, LOG_USER, Logger::INFO, false);
 });
+
+AppLogger::scope('syslog')->debug('Debug message from AppLogger');
+AppLogger::scope('syslog')->info('Info message from AppLogger');
 ```
+Так мы задаем кастомный хэндлер через коллбэк, указывая для него особые параметры.
+
+## Передача хэндлера строкой
+
+Не рекомендуется, поскольку конструктор хэндлера принимает дефолтные значения (за исключением `bubble: false`) 
+
+```php
+AppLogger::addScopeLevel('syslog', 'syslog', Logger::INFO, handler: SyslogHandler::class); 
+```
+
+
+
+
 
 
 

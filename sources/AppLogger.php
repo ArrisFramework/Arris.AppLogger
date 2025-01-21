@@ -9,9 +9,6 @@
  * Github: https://github.com/ArrisFramework/Arris.AppLogger
  * Packagist: https://packagist.org/packages/karelwintersky/arris.logger
  *
- * Date: 31.10.2019 14:00:00
- * Date: 07.08.2023 19:00:00
- *
  */
 
 namespace Arris;
@@ -109,14 +106,17 @@ class AppLogger implements AppLoggerInterface
     ];
 
     /**
-     * @var array $_instances \Monolog
+     * @var array $_instances
      */
     public static array $_instances = [];
 
+    /**
+     * @var array
+     */
     public static array $_declared_loggers = [];
 
     /**
-     * @var array
+     * @var array $_global_config
      */
     public static array $_global_config = [
         'bubbling'                      =>  false,
@@ -219,6 +219,8 @@ class AppLogger implements AppLoggerInterface
      * @param bool $bubble
      * @param callable|string $handler
      * @return void
+     *
+     * @throws \ReflectionException
      */
     public static function addScopeLevel(?string $scope = null, ?string $target = '', int $log_level = Logger::DEBUG, bool $enable = true, bool $bubble = false, $handler = null):void
     {
@@ -249,31 +251,25 @@ class AppLogger implements AppLoggerInterface
             'options'   =>  $options
         ];
 
-        if ($enable === false) {
-            $options['handler'] = \Arris\AppLogger\Monolog\Handler\NullHandler::class;
-        }
-
-        if (!$enable) {
+        if (false === $enable) {
+            // Null handler if level not enabled
             $options['enable'] = false;
-            $logger->pushHandler(new \Arris\AppLogger\Monolog\Handler\NullHandler($log_level)); // null handler
+            $options['handler'] = \Arris\AppLogger\Monolog\Handler\NullHandler::class;
+            $logger->pushHandler(new \Arris\AppLogger\Monolog\Handler\NullHandler($log_level));
+        }
+        elseif ( $handler == StreamHandler::class || $handler === null )
+        {
+            $logger->pushHandler( new StreamHandler($filename, $log_level, $bubble) );
         }
         elseif (is_string($handler) && (new \ReflectionClass($handler))->implementsInterface('Arris\AppLogger\Monolog\Handler\HandlerInterface'))
         {
             // string + implements interface by reflection
-            //@todo: для версии ветки 2.0+ (PHP8 only) оставить строчку с `bubble:`
-            // $logger->pushHandler( new $handler($logger_name, bubble: $bubble) ); // PHP8 REQUIRED
-
-            //@todo: для версии ветки 1+ (PHP7.4) оставить строчку без `bubble:`
-            $logger->pushHandler( new $handler($logger_name) );
+            $logger->pushHandler( new $handler($logger_name, level: $log_level, bubble: $bubble) );
         }
         elseif ( \is_callable($handler) )
         {
             // callable
             $logger->pushHandler( call_user_func_array($handler, []) );
-        }
-        elseif ( $handler == StreamHandler::class || $handler === null )
-        {
-            $logger->pushHandler( new StreamHandler($filename, $log_level, $bubble) );
         }
         else
         {
@@ -302,8 +298,10 @@ class AppLogger implements AppLoggerInterface
      *
      * @param bool $scope_logging_enabled - разрешен ли скоуп вообще для логгирования?
      * @return void
+     *
+     * @throws \ReflectionException
      */
-    public static function addScope($scope = null, array $scope_levels = [], bool $scope_logging_enabled = true)
+    public static function addScope($scope = null, array $scope_levels = [], bool $scope_logging_enabled = true): void
     {
         $is_deferred_scope = false;
 
@@ -343,58 +341,49 @@ class AppLogger implements AppLoggerInterface
                 'options'   =>  $level_options
             ];
 
-            // NullHandler если логгер так или иначе отключен
-            if ($level_options['enable'] === false) {
-                $level_options['handler'] = \Arris\AppLogger\Monolog\Handler\NullHandler::class;
-            }
-
-            if ( $level_options['enable'] == false || $scope_logging_enabled == false )
+            if (($level_options['enable'] === false) || ($scope_logging_enabled === false))
             {
                 // NULL Handler
-                $level_options['enable'] = false;
+                $options['enable'] = false;
+                $level_options['handler'] = \Arris\AppLogger\Monolog\Handler\NullHandler::class;
                 $logger->pushHandler( new \Arris\AppLogger\Monolog\Handler\NullHandler($loglevel) );
             }
-            elseif ( \is_callable($level_options['handler']) )
+            elseif ( $level_options['handler'] == StreamHandler::class || is_null($level_options['handler']) )
             {
-                // у коллбэка не будет параметров, поэтому мы их не передаем
-                $logger->pushHandler( call_user_func_array($level_options['handler'], []) );
-
-            }
-            elseif ( $level_options['handler'] == StreamHandler::class || $level_options['handler'] === null )
-            {
-                // Default stream Handler
                 $logger->pushHandler( new StreamHandler($filename, $loglevel, $level_options['bubbling']) );
             }
-            elseif ( \in_array('AppLogger\Monolog\Handler\HandlerInterface', class_implements($level_options['handler'])) )
+            elseif (is_string($level_options['handler']) && (new \ReflectionClass($level_options['handler']))->implementsInterface('Arris\AppLogger\Monolog\Handler\HandlerInterface'))
             {
-                // НИКОГДА НЕ ВЫЗЫВАЕТСЯ, ПОСКОЛЬКУ ПЕРЕКРЫВАЕТСЯ БЛОКОМ `IS_CALLABLE()`
-                // НАПРИМЕР, ТАК:
-                // [ 'xxx.log', Logger::DEBUG, [ 'handler' => AppLogger\Monolog\Handler\StreamHandler::class ] ]
-                // via HandlerInterface (не тестировалось)
+                // string + implements interface by reflection
                 /**
                  * @param \Arris\AppLogger\Monolog\Handler\HandlerInterface $handler
                  */
                 $handler = $level_options['handler'];
-
-                $logger->pushHandler(  $handler );
+                $logger->pushHandler( new $handler($logger_name, bubble: $level_options['bubbling']) );
+            }
+            elseif ( \is_callable($level_options['handler']) )
+            {
+                // у коллбэка не будет параметров
+                $logger->pushHandler( call_user_func_array($level_options['handler'], []) );
             }
             else
             {
-                // NULL Handler
                 $logger->pushHandler( new \Arris\AppLogger\Monolog\Handler\NullHandler($loglevel) );
             }
 
             self::$_configs[ $internal_key ][ $loglevel ] = $level_options;
 
         } //foreach
+
         self::$_instances[ $internal_key ] = $logger;
     }
 
     /**
      * Добавляет null-logger
-     * @return mixed Logger
+     *
+     * @return Logger
      */
-    public static function addNullLogger()
+    public static function addNullLogger(): Logger
     {
         return (new Logger('null'))->pushHandler(new \Arris\AppLogger\Monolog\Handler\NullHandler());
     }
@@ -404,6 +393,7 @@ class AppLogger implements AppLoggerInterface
      *
      * @param null $scope
      * @return Logger
+     * @throws \ReflectionException
      */
     public static function scope($scope = null):Logger
     {
@@ -451,6 +441,7 @@ class AppLogger implements AppLoggerInterface
 
     /**
      * Возвращает опции логгер-скоупа
+     *
      * @param null $scope
      * @return mixed
      */
@@ -463,6 +454,7 @@ class AppLogger implements AppLoggerInterface
      * Поздняя инициализация скоупа со значениями по умолчанию.
      *
      * @param null $scope
+     * @throws \ReflectionException
      */
     private static function addDeferredScope($scope = null)
     {

@@ -21,6 +21,7 @@
     },
     "suggest": {
         "karelwintersky/arris": "Arris µFramework: AppRouter class",
-        "karelwintersky/arris.helpers": "Arris µFramework: helpers"
+        "karelwintersky/arris.helpers": "Arris µFramework: helpers",
+        "monolog/monolog": "^2.9.3"
     }
 }

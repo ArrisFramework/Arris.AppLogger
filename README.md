@@ -1,7 +1,8 @@
 # Init
 
 Инициализирует класс логгера:
-```
+
+```php
 AppLogger::init($application, $instance, $options = []):void
 ```
 
@@ -18,9 +19,9 @@ AppLogger::init($application, $instance, $options = []):void
   * `deferred_scope_creation` - [TRUE] - разрешать ли отложенную инициализацию скоупов
   * `deferred_scope_separate_files` - [TRUE] - использовать ли разные файлы для deferred-скоупов (на основе имени скоупа)
 
-# Add Scope
+# Add Scope (multiply levels)
 
-```
+```php
 AppLogger::addScope($scope = null, $scope_levels = [], $scope_logging_enabled = true, $is_deferred_scope = false):void
 ```
 
@@ -34,7 +35,7 @@ AppLogger::addScope($scope = null, $scope_levels = [], $scope_logging_enabled = 
 Настройки логгеров по уровням (логгирования) передаются в массиве `$scope_levels`. Может быть передан пустой массив - тогда поставятся опции "по умолчанию" (на основе глобальных опций), а скоуп будет создан как 'deferred' (отложенная инициализация).
 
 Пример:
-```
+```php
 AppLogger::addScope('mysql', 
 [
     [ '__mysql.100-debug.log', Logger::DEBUG, 'enable' => true],
@@ -49,12 +50,13 @@ AppLogger::addScope('mysql',
 * Второй элемент:`logging_level` - уровень логгирования, используются числа или (что удобнее), константы `\Monolog\Logger::DEBUG` и другие из того же неймспейса.
 
 Остальные параметры передаются через ключи ассоциативного массива:
-* `enabled` - [TRUE], разрешен ли этот уровень логгирования. Применяется тот же механизм, что и для глобальной опции `$scope_logging_enabled` для скоупа;
+* `enable` - [TRUE], разрешен ли этот уровень логгирования. Применяется тот же механизм, что и для глобальной опции `$scope_logging_enabled` для скоупа;
 * `bubbling` - [FALSE], всплывает ли сообщение логгирования на следующий (более низкий) уровень?
 * `handler` - [NULL] либо хэндлер, реализующий интерфейс `Monolog\Handler\HandlerInterface`. Если указан NULL - будет использован хэндлер по умолчанию: StreamHandler, записывающий лог в файл.
 
 *NB:* Следует отметить, что если используется необъявленный в скоупе логгер, например:
-```
+
+```php
 AppLogger::scope('mysql')->emergency('MYSQL EMERGENCY');
 ```
 Monolog проспамит этим сообщением по всем объявленным уровням.
@@ -62,12 +64,14 @@ Monolog проспамит этим сообщением по всем объя�
 # Usage
 
 Вызов `AppLogger::scope($scope_name)` возвращает инстанс `\Monolog\Logger`, к которому можно применить штатные методы логгирования:
+
 ```
 debug, notice, warn, error, emergency и так далее
 ```
 
-Например:
-```
+Пример:
+
+```php
 AppLogger::scope('mysql')->debug("mysql::Debug", [ ['x'], ['y']]);
 AppLogger::scope('mysql')->notice('mysql::Notice', ['x', 'y']);
 ```
@@ -77,7 +81,8 @@ AppLogger::scope('mysql')->notice('mysql::Notice', ['x', 'y']);
 Есть возможность использовать скоупы с отложенной инициализацией и параметрами по умолчанию. Этот механизм называется Deferred Scope.
 
 Вызов аналогичен предварительно инициализированному логгеру:
-```
+
+```php
 AppLogger::scope('usage')->emergency('EMERGENCY USAGE');
 ```
 
@@ -85,17 +90,20 @@ AppLogger::scope('usage')->emergency('EMERGENCY USAGE');
 
 *NB:* Если при инициализации обычного скоупа методом `addScope()` передан пустой массив опций логгеров - будет применен механизм инициализации deferred-скоупа.
 
-# Примечания (usage hints)
+# Hints 
 
 ## Один файл для нескольких уровней логгирования
 
 Указываем наименьший используемый уровень логгирования (`Logger::NOTICE`)
-```
-AppLogger::addScope('log.selectel', [ [ '_selectel_upload.log', Logger::NOTICE ]  ]);
+
+```php
+AppLogger::addScope('log.selectel', [ 
+    [ '_selectel_upload.log', Logger::NOTICE ]  
+]);
 ```
 
 Теперь вот эти два вызова запишут в файл 2 строчки
-```
+```php
 AppLogger::scope('log.selectel')->error('Error');
 AppLogger::scope('log.selectel')->notice('Notice');
 ```
@@ -123,8 +131,68 @@ AppLogger::addScope('console', [
 
 Добавляет собственный хэндлер логгирования - и кастомный форматтер. 
 
-
 https://stackoverflow.com/questions/70875746/laravel-monolog-lineformatter-datetime-pattern
+
+# addScopeLevel()
+
+Метод используется для описания конкретного уровня логгирования и логгера. Рекомендуется использовать в PHP8+:
+
+## "Обычное" логгирование в файл:
+
+```php
+AppLogger::addScopeLevel('xxx', 'info.log', Logger::INFO); // Handler не указан, что означает, по умолчанию, StreamHandler 
+AppLogger::scope('xxx')->info('Message XXX');
+```
+
+## Передача хэндлера строкой:
+
+```php
+AppLogger::addScopeLevel('syslog', 'syslog', Logger::INFO, handler: SyslogHandler::class); 
+```
+Это возможно, но не рекомендуется. Причина? Конструктор примет значения по-умолчанию, в том числе `$bubble = true`, что вызывает странные
+эффекты. Например:
+
+```php
+AppLogger::addScopeLevel('syslog', 'syslog', Logger::INFO, handler: SyslogHandler::class);
+AppLogger::scope('syslog')->debug('Debug message from AppLogger');
+AppLogger::scope('syslog')->info('Info message from AppLogger');
+```
+Выдаст 2 записи для Debug и 2 для Info. Причина - "bubbling". Это можно исправить, но только в версии для PHP8, 
+указав через именованный параметр значение `false`. 
+
+Для совместимости с PHP7.4 рекомендуется:
+
+## Передача хэндлера коллбэком
+
+```php
+AppLogger::addScopeLevel('syslog', 'syslog', Logger::DEBUG, true, false, function (){
+    return new SyslogHandler(AppLogger::$application, LOG_USER, Logger::DEBUG, false);
+});
+
+AppLogger::addScopeLevel('syslog', 'syslog', Logger::INFO, true, false, function (){
+    return new SyslogHandler(AppLogger::$application, LOG_USER, Logger::INFO, false);
+});
+
+AppLogger::scope('syslog')->debug('Debug message from AppLogger');
+AppLogger::scope('syslog')->info('Info message from AppLogger');
+```
+Так мы задаем кастомный хэндлер через коллбэк, указывая для него особые параметры. 
+
+Или, для PHP8, короче:
+
+```php
+AppLogger::addScopeLevel('syslog', 'syslog', Logger::DEBUG, handler: function (){
+    return new SyslogHandler(AppLogger::$application, LOG_USER, Logger::DEBUG, false);
+});
+
+AppLogger::addScopeLevel('syslog', 'syslog', Logger::INFO, handler: function (){
+    return new SyslogHandler(AppLogger::$application, LOG_USER, Logger::INFO, false);
+});
+```
+
+
+
+
 
 
 

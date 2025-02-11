@@ -1,6 +1,6 @@
 <?php
 
-namespace Arris\Formatter;
+namespace Arris\AppLogger;
 
 use Arris\AppLogger\Monolog\Formatter\LineFormatter;
 

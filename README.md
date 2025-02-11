@@ -118,11 +118,12 @@ AppLogger::addScope('console', [
 ```
 
 Добавляем кастомный форматтер и хэндлер логгирования:
+
 ```php
   AppLogger::addScope('console', [
         [ 'php://stdout', Logger::INFO, [ 'handler' => static function()
           {
-              $formatter = new \Arris\Formatter\LineFormatterColored("[%datetime%]: %message%\n", "Y-m-d H:i:s", false, true);
+              $formatter = new \Arris\AppLogger\LineFormatterColored("[%datetime%]: %message%\n", "Y-m-d H:i:s", false, true);
               $handler = new StreamHandler('php://stdout', Logger::INFO);
               $handler->setFormatter($formatter);
               return $handler;

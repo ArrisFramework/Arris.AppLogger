@@ -11,7 +11,7 @@
     ],
     "require": {
         "php": "8.*",
-        "psr/log": "^1.0.1 || ^2.0 || ^3.0"
+        "psr/log": "*"
     },
     "autoload": {
         "psr-4": {

@@ -133,6 +133,23 @@ AppLogger::addScope('console', [
 
 Смотри: https://stackoverflow.com/questions/70875746/laravel-monolog-lineformatter-datetime-pattern
 
+или, для PHP8+
+```php
+AppLogger::addScopeLevel(
+    scope: 'console',
+    target: 'php://stdout',
+    log_level: Logger::INFO,
+    enable: $options['verbose'],
+    handler: static function()
+    {
+        $formatter = new \Arris\AppLogger\LineFormatterColored("[%datetime%]: %message%\n", "Y-m-d H:i:s", false, true);
+        $handler = new \Arris\AppLogger\Monolog\Handler\StreamHandler('php://stdout', Logger::INFO);
+        $handler->setFormatter($formatter);
+        return $handler;
+    }
+);
+```
+
 # addScopeLevel()
 
 Метод используется для описания конкретного уровня логгирования и логгера. Рекомендуется использовать в PHP8+:
